@@ -19,8 +19,10 @@ server {
   server_name <%= name %>;
 
 
+  <% if basic_auth %>
   auth_basic "Restricted";
   auth_basic_user_file "<%= auth_file_path %>";
+  <% end %>
 
   access_log /var/log/<%= name %>-access.log;
   error_log  /var/log/<%= name %>-error.log;
@@ -53,7 +55,8 @@ def to_ctx(basic_auth_file_path, als)
     auth_file_path: basic_auth_file_path,
     name: als['name'].gsub(/\W/, '_'),
     alias_port: als['alias-port'],
-    source_port: als['source-port']
+    source_port: als['source-port'],
+    basic_auth: als.fetch('basic-auth', true)
   }
 
   CTX.new(ctx)

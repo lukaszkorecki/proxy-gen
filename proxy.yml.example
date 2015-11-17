@@ -15,6 +15,7 @@ aliases:
   - name: rabbit
     source-port: 15672
     alias-port: 9595
+    basic-auth: false
 
 
   - name: kibana
