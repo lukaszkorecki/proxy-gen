@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+
+require 'yaml'
+
+require 'erb'
+
+TEMPLATE = <<-EOF
+
+upstream <%= name %> {
+server 127.0.0.1:<%= source_port %>
+}
+
+server {
+  listen   <%= alias_port %>;
+  server_name <%= name %>;
+
+
+  auth_basic "Restricted";
+  auth_basic_user_file "<%= auth_file_path %>";
+
+  access_log /var/log/<%= name %> -access.log;
+  error_log  /var/log/%<= name %>-error.log;
+
+  location / {
+    proxy_set_header  X-Real-IP  $remote_addr;
+    proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header  Host $http_host;
+    proxy_redirect  off;
+    try_files index.html @<%= name %>;
+  }
+
+  location @<%= name %> {
+    proxy_pass http://<%= name %>;
+  }
+
+}
+
+
+EOF
+def to_ctx(_basic_auth_file_path, _als)
+end
+
+def process_config(config)
+  basic_auth_file_path = File.expand_path config['basic_auth_file']
+
+  buf = ''
+
+  config['aliases'].each do |als|
+    ctx = to_ctx(basic_auth_file_path, als)
+  end
+end

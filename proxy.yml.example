@@ -1,0 +1,20 @@
+basic_auth_file: ./httppasswd
+
+aliases:
+  - name: rails
+    source-port: 3000
+    alias-port: 9393
+
+
+  - name: elastic
+    source-port: 9200
+    alias-port: 9494
+
+  - name: rabbit
+    source-port: 15672
+    alias-port: 9595
+
+
+  - name: kibana
+    source-port: 5601
+    alias-port: 9696
