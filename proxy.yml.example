@@ -1,4 +1,6 @@
-basic_auth_file: ./httppasswd
+# vim: set ft=yaml :
+basic_auth_file: ./httpasswd
+nginx_conf_file: ./proxy.conf.example
 
 aliases:
   - name: rails

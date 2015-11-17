@@ -1,2 +1,5 @@
 proxy.yml
 tags
+httpasswd
+proxy.conf
+proxy.conf.example

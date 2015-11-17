@@ -1,13 +1,17 @@
 #!/usr/bin/env ruby
 
 require 'yaml'
-
+require 'ostruct'
 require 'erb'
+
+require 'logger'
+
+LOG = Logger.new(STDOUT)
 
 TEMPLATE = <<-EOF
 
 upstream <%= name %> {
-server 127.0.0.1:<%= source_port %>
+  server 127.0.0.1:<%= source_port %>;
 }
 
 server {
@@ -18,8 +22,8 @@ server {
   auth_basic "Restricted";
   auth_basic_user_file "<%= auth_file_path %>";
 
-  access_log /var/log/<%= name %> -access.log;
-  error_log  /var/log/%<= name %>-error.log;
+  access_log /var/log/<%= name %>-access.log;
+  error_log  /var/log/<%= name %>-error.log;
 
   location / {
     proxy_set_header  X-Real-IP  $remote_addr;
@@ -37,15 +41,67 @@ server {
 
 
 EOF
-def to_ctx(_basic_auth_file_path, _als)
+
+class CTX < OpenStruct
+  def get_binding
+    binding
+  end
 end
 
-def process_config(config)
-  basic_auth_file_path = File.expand_path config['basic_auth_file']
+def to_ctx(basic_auth_file_path, als)
+  ctx = {
+    auth_file_path: basic_auth_file_path,
+    name: als['name'].gsub(/\W/, '_'),
+    alias_port: als['alias-port'],
+    source_port: als['source-port']
+  }
 
-  buf = ''
+  CTX.new(ctx)
+end
+
+def generate(ctx)
+  LOG.info "Creating config part for #{ctx.name}"
+  ERB.new(TEMPLATE).result(ctx.get_binding)
+end
+
+def save(out_file, buf)
+  LOG.warn "Saving to #{out_file}"
+  File.write(out_file, buf)
+end
+
+def create_config(basic_auth_file_path, config)
+  buf = "# vim : set ft=nginx :\n\n\n"
 
   config['aliases'].each do |als|
     ctx = to_ctx(basic_auth_file_path, als)
+
+    buf << generate(ctx)
+  end
+
+  buf
+end
+
+def process_config(config)
+  basic_auth_file_path = File.expand_path(config['basic_auth_file'])
+
+  out_file = File.expand_path(config['nginx_conf_file'])
+
+  LOG.info "Got config with #{config['aliases'].size} aliases"
+
+  buf = create_config(basic_auth_file_path, config)
+
+  save(out_file, buf)
+  LOG.info 'Done'
+  LOG.info 'Dont forget to open following ports in your firewall:'
+  config['aliases'].each do |als|
+    LOG.info "\t- #{als['alias-port']}"
   end
 end
+
+def main(args)
+  config = YAML.load_file args.first
+
+  process_config config
+end
+
+main(ARGV)
