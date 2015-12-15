@@ -102,7 +102,7 @@ def process_config(config)
 end
 
 def main(args)
-  config = YAML.load_file args.first
+  config = YAML.load_file File.expand_path args.first
 
   process_config config
 end
